@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com https://unpkg.com; connect-src 'self' ws: wss:; img-src 'self' data:;">
+
+  <title>MQTT Observer</title>
+
+  <!-- Google Fonts - Poppins -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Socket.IO is served by Node-RED -->
+  <script src="/socket.io/socket.io.js"></script>
+
+  <!-- Vue.js - Production -->
+  <script src="https://unpkg.com/vue@3.4.21/dist/vue.global.prod.js"></script>
+
+  <!-- Chart.js - Production UMD -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+  <!-- PrimeIcons (keep for icons) -->
+  <link rel="stylesheet" href="https://unpkg.com/primeicons@6.0.1/primeicons.css">
+
+  <!-- Custom styles -->
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div id="app">
+    <div class="header">
+      <h1><img src="Logo_Icon_Gradient.svg" class="logo" alt="Bitpool" /><span class="titleText">Bitpool Edge</span>
+      </h1>
+      <div class="header-controls">
+        <div class="stats-display">
+          <span class="stats-item" title="Total topics: Number of unique MQTT topics currently in memory">
+            <i class="pi pi-inbox"></i> {{ Object.keys(topicData).length }}
+          </span>
+          <span v-if="wasHiddenLongTime" class="stats-item sync-indicator"
+            title="Page was hidden for a long time. Data has been synced.">
+            <i class="pi pi-refresh"></i> Synced
+          </span>
+        </div>
+        <div :class="['connection-status', connectionState]">{{ connectionStatus }}</div>
+      </div>
+    </div>
+
+    <div class="container">
+      <!-- Topic Tree Panel -->
+      <div class="topic-panel">
+        <div class="topic-header">
+          <div class="topic-header-content">
+            <span class="topic-header-title">Topic Explorer</span>
+            <div class="search-container">
+              <input type="text" v-model="topicSearch" placeholder="Search topics..." class="topic-search">
+            </div>
+          </div>
+          <!-- Topic pattern subscription section removed as MQTT node already handles subscription filtering -->
+        </div>
+        <div class="tree-container">
+          <div class="virtual-tree-container">
+            <div class="tree-search-results" v-if="topicSearch">
+              Showing {{ filteredTreeNodes.length }} results
+            </div>
+            <virtual-tree :nodes="filteredTreeNodes" :node-height="36" :visible-count="25"
+              :expanded-keys="expandedNodeKeys" @node-click="onNodeSelect" @node-expand="onNodeExpand"
+              @node-collapse="onNodeCollapse" class="mqtt-virtual-tree">
+              <template #node="{ node, depth }">
+                <div :class="['tree-node-content', node.styleClass, {'tree-leaf': node.leaf}]"
+                  :style="{ paddingLeft: (depth * 16) + 'px' }"
+                  @click="node.leaf ? onChildTopicClick(node) : toggleNode(node)">
+
+                  <span class="tree-toggle" v-if="!node.leaf">
+                    <i :class="expandedNodeKeys[node.key] ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"></i>
+                  </span>
+                  <span class="tree-toggle-spacer" v-else></span>
+
+                  <i :class="node.icon" class="tree-icon"></i>
+                  <span class="tree-label">{{ node.label }}</span>
+                </div>
+              </template>
+            </virtual-tree>
+          </div>
+        </div>
+
+        <!-- Performance Tips Panel - moved outside scrollable tree -->
+        <div v-if="Object.keys(topicData).length > 1000" class="topic-help-panel">
+          <div class="topic-help-header">
+            <i class="pi pi-info-circle"></i> Performance Tips
+          </div>
+          <div class="topic-help-content">
+            <p>You have <strong>{{ Object.keys(topicData).length }}</strong> topics loaded. For better performance:</p>
+            <ul>
+              <li>Use topic patterns to filter messages</li>
+              <li>Subscribe to specific topic branches</li>
+              <li>Clear unused topics regularly</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right side container -->
+      <div class="right-panel">
+        <!-- Top section: Payload and History side by side -->
+        <div class="top-section">
+          <!-- Payload Panel -->
+          <div class="payload-panel">
+            <div class="payload-header">
+              <span>{{ selectedTopic || 'No topic selected' }}</span>
+              <span class="payload-timestamp">{{ selectedTimestamp }}</span>
+            </div>
+            <div class="payload-container" v-html="formattedPayload"></div>
+          </div>
+
+          <!-- History Panel -->
+          <div class="history-panel">
+            <div class="history-header">
+              Topic History
+              <button class="clear-history" @click="clearHistory">Clear</button>
+            </div>
+            <div class="history-container">
+              <div v-for="(msg, index) in filteredHistory" :key="index" class="history-item"
+                @click="showHistoricalMessage(msg)">
+                <div class="history-meta">
+                  <span class="history-timestamp">{{ formatTimestamp(msg.timestamp) }}</span>
+                </div>
+              </div>
+              <div v-if="filteredHistory.length === 0" class="no-history">
+                <i class="pi pi-history"></i>
+                <p v-if="selectedTopic">No history for "{{ selectedTopic }}"</p>
+                <p v-else>Select a topic to view its history</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chart Panel -->
+        <div class="chart-panel">
+          <div class="chart-header">
+            Data Visualization
+            <div class="chart-controls">
+              <select v-model="chartTimeRange" @change="updateChart" class="time-range-select">
+                <option value="all">All Data</option>
+                <option value="hour">Last Hour</option>
+                <option value="minute">Last Minute</option>
+              </select>
+              <select v-if="availableProperties.length > 0" v-model="selectedProperty" @change="updateChart"
+                class="property-select">
+                <option v-for="prop in availableProperties" :key="prop" :value="prop">{{ prop }}</option>
+              </select>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="mqttChart"></canvas>
+            <div v-if="chartLabels.length === 0" class="no-chart-data">
+              <i class="pi pi-chart-line"></i>
+              <p v-if="selectedTopic">No data available for "{{ selectedTopic }}"</p>
+              <p v-else>Select a topic to view chart</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>

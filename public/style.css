@@ -1,0 +1,955 @@
+body {
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: var(--text-color);
+  background-color: var(--surface-ground);
+}
+
+.logo {
+  height: 40px;
+  margin-right: 10px;
+  vertical-align: middle;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--surface-card);
+  border-bottom: 1px solid var(--surface-border);
+  box-shadow: 0 2px 4px rgba(0,0,0,.05);
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.titleText {
+  color: #133547;
+  display: inline-block;
+}
+
+.topic-header-title { 
+  color: #00adef;
+}
+
+.connection-status {
+  padding: 0.4rem 0.8rem;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 500;
+}
+
+.connection-status.connected {
+  background-color: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.connection-status.disconnected {
+  background-color: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.connection-status.connecting {
+  background-color: #fefce8;
+  color: #ca8a04;
+  border: 1px solid #fde047;
+}
+
+.connection-status.error {
+  background-color: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+/* Main content container */
+.container {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  background-color: var(--surface-ground);
+}
+
+/* Topic tree panel */
+.topic-panel {
+  width: 30%;
+  background: var(--surface-card, #ffffff);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 6px rgba(0,0,0,.1);
+  z-index: 1;
+  border: 1px solid var(--surface-border, #e0e0e0);
+  border-radius: 6px;
+  max-height: 100%; /* Ensure panel doesn't overflow */
+  overflow: hidden; /* Prevent panel content from overflowing */
+}
+
+.topic-header {
+  padding: 1rem;
+  background: var(--surface-section, #f8f9fa);
+  border-bottom: 1px solid var(--surface-border, #e0e0e0);
+  font-weight: 600;
+  color: var(--text-color-secondary, #6b7280);
+  font-family: 'Poppins', sans-serif;
+}
+
+.tree-container {
+  flex: 1;
+  overflow: hidden;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0; /* Important for flex containers */
+}
+
+/* Virtual Tree Styles - Optimized for Performance */
+.virtual-tree-container {
+  flex: 1; /* Take remaining space after header */
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-card);
+  overflow: hidden; /* Prevent overflow */
+  min-height: 0; /* Allow flex shrinking */
+}
+
+.tree-search-results {
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-color-secondary);
+  border-bottom: 1px solid var(--surface-border);
+  background: var(--surface-section);
+  flex-shrink: 0; /* Don't shrink the search results */
+}
+
+.virtual-tree {
+  flex: 1;
+  height: 100%;
+  overflow: auto;
+  background: transparent;
+  border: none;
+  min-height: 0; /* Allow flex shrinking */
+}
+
+.virtual-tree-node {
+  border-bottom: 1px solid var(--surface-border, rgba(0, 0, 0, 0.08));
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  background: var(--surface-card);
+}
+
+.virtual-tree-node:hover {
+  background-color: var(--surface-hover, rgba(59, 130, 246, 0.05));
+}
+
+.virtual-tree-node.selected {
+  background-color: var(--primary-color-lightest, rgba(59, 130, 246, 0.1));
+  border-left: 3px solid var(--primary-color);
+}
+
+.tree-node-content {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.6rem;
+  height: 100%;
+  user-select: none;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 0.9rem;
+  color: var(--text-color);
+}
+
+.tree-toggle {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.3rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: var(--text-color-secondary);
+  transition: color 0.2s;
+  border-radius: 2px;
+}
+
+.tree-toggle:hover {
+  background-color: var(--surface-hover, rgba(0, 0, 0, 0.05));
+  color: var(--text-color);
+}
+
+.tree-toggle-spacer {
+  width: 16px;
+  margin-right: 0.3rem;
+}
+
+.tree-icon {
+  margin-right: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--text-color-secondary);
+  transition: color 0.2s;
+}
+
+.tree-label {
+  flex: 1;
+  font-size: 0.9rem;
+  color: var(--text-color);
+  font-weight: 500;
+  transition: color 0.2s;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+}
+
+/* Tree Node Type Styling - Enhanced */
+.virtual-tree-node.has-data .tree-label {
+  font-weight: 600;
+  color: var(--primary-color, #3b82f6);
+}
+
+.virtual-tree-node.has-data .tree-icon {
+  color: var(--primary-color, #3b82f6);
+}
+
+.virtual-tree-node.intermediate-node .tree-label {
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+.virtual-tree-node.intermediate-node .tree-icon {
+  color: var(--text-color-secondary);
+}
+
+.virtual-tree-node.tree-leaf:hover {
+  background-color: var(--primary-color-lightest, rgba(59, 130, 246, 0.08));
+}
+
+.virtual-tree-node.tree-leaf:hover .tree-label {
+  color: var(--primary-color-dark, #2563eb);
+}
+
+/* Focus states for accessibility */
+.tree-node-content:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: -2px;
+}
+
+/* Visual hierarchy - tree lines and indentation */
+.virtual-tree-node.has-data .tree-node-content {
+  border-left: 2px solid transparent;
+}
+
+.virtual-tree-node.has-data:hover .tree-node-content {
+  border-left: 2px solid var(--primary-color);
+}
+
+.virtual-tree-node.selected .tree-node-content {
+  border-left: 3px solid var(--primary-color);
+  background-color: var(--primary-color-lightest, rgba(59, 130, 246, 0.1));
+}
+
+/* Restore tree indentation guides */
+.tree-node-content::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--surface-border, rgba(0, 0, 0, 0.1));
+  opacity: 0.3;
+}
+
+/* Payload panel */
+.payload-panel {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-card, #ffffff);
+  margin-right: 1px;
+  overflow: hidden;
+  border: 1px solid var(--surface-border, #e0e0e0);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.payload-header, .history-header, .chart-header {
+  padding: 1rem;
+  background: var(--surface-section, #f8f9fa);
+  border-bottom: 1px solid var(--surface-border, #e0e0e0);
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--text-color-secondary, #6b7280);
+  height: 3.5rem;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+.payload-header span:first-child {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-color, #374151);
+}
+
+.payload-container {
+  flex: 1;
+  overflow: auto;
+  padding: 1rem;
+  max-height: 100%;
+  background: var(--surface-ground, #f8f9fa);
+}
+
+/* Message styles */
+.mqtt-message {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--surface-border);
+  border-radius: 6px;
+  background-color: var(--surface-card);
+}
+
+.mqtt-timestamp {
+  font-size: 0.875rem;
+  color: var(--text-color-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.mqtt-payload {
+  font-family: 'Fira Code', 'Monaco', 'Menlo', 'Consolas', monospace;
+  background-color: var(--surface-card, #ffffff); /* White background for payload content */
+  padding: 1rem;
+  border-radius: 6px;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  max-height: calc(100% - 3rem);
+  overflow: auto;
+  border: 1px solid var(--surface-border, #e0e0e0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-color, #374151);
+}
+
+.system-message {
+  color: var(--primary-color);
+  font-style: italic;
+  text-align: center;
+  padding: 2rem;
+}
+
+/* No messages state */
+.no-messages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-color-secondary, #6b7280);
+  background-color: var(--surface-card, #ffffff); /* White background for consistency */
+  border-radius: 6px;
+  border: 1px solid var(--surface-border, #e0e0e0);
+  margin: 0.5rem 0;
+  padding: 2rem;
+}
+
+.no-messages i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.3;
+  color: var(--text-color-secondary, #6b7280);
+}
+
+.no-messages p {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* Payload timestamp bar */
+.payload-timestamp {
+  font-size: 0.75rem;
+  color: var(--text-color-secondary, #6b7280);
+  font-weight: 400;
+}
+
+/* Topic tree styles */
+.tree {
+  list-style: none;
+  padding-left: 0;
+  position: relative;
+}
+
+.tree ul {
+  list-style: none;
+  padding-left: 20px;
+  position: relative;
+}
+
+/* Ensure direct children keep their position */
+.tree > li, 
+.tree > li > ul > li {
+  position: relative;
+}
+
+/* Add vertical lines to help visualize tree structure */
+.tree-node {
+  padding: 5px 0;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+/* Improve expansion behavior */
+.tree-node ul {
+  overflow: visible;
+}
+
+/* When the node is expandable and has children */
+.tree-toggle {
+  width: 16px;
+  height: 16px;
+  margin-right: 5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  transition: transform 0.2s ease;
+}
+
+.tree-node:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.tree-node.selected {
+  background-color: #e6f7ff;
+  border-right: 2px solid #1890ff;
+}
+
+.tree-leaf {
+  margin-left: 21px; /* 16px + 5px to align with tree-toggle + label */
+}
+
+.tree-empty-toggle {
+  width: 16px;
+  display: inline-block;
+}
+
+/* Tree animation for smoother transitions */
+.tree ul {
+  transition: height 0.3s ease-out;
+}
+
+/* Better visual indication of hierarchical structure */
+.tree ul:before {
+  content: "";
+  display: block;
+  width: 0;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 10px;
+  border-left: 1px dotted #ddd;
+  z-index: 0;
+}
+
+.tree li:before {
+  content: "";
+  display: block;
+  width: 10px;
+  height: 0;
+  border-top: 1px dotted #ddd;
+  position: absolute;
+  top: 15px;
+  left: -10px;
+  z-index: 1;
+}
+
+/* Hide connecting lines for root level */
+.tree > li:before,
+.tree:before {
+  display: none;
+}
+
+.leaf-node {
+  cursor: pointer;
+  color: var(--primary-color);
+}
+
+.leaf-node:hover {
+  text-decoration: underline;
+  background-color: var(--surface-hover);
+}
+
+/* Right panel */
+.right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-left: 1px;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Top section with payload and history side by side */
+.top-section {
+  display: flex;
+  flex: 1;
+  margin-bottom: 1px;
+  min-height: 0; /* Important for proper flexbox scrolling */
+  overflow: hidden;
+}
+
+/* History panel */
+.history-panel {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-card, #ffffff);
+  overflow: hidden;
+  border: 1px solid var(--surface-border, #e0e0e0);
+  border-radius: 6px;
+}
+
+.history-container {
+  flex: 1;
+  overflow: auto;
+  padding: 0.5rem;
+  max-height: 100%;
+  background: var(--surface-card, #ffffff);
+}
+
+.history-item {
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  border-radius: 4px;
+  background-color: var(--surface-ground, #f5f5f5);
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border: 1px solid var(--surface-border, #e0e0e0);
+}
+
+.history-item:hover {
+  background-color: var(--surface-hover, #f0f0f0);
+}
+
+.history-topic {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  color: var(--primary-color);
+}
+
+.history-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-color-secondary);
+}
+
+.clear-history {
+  background-color: var(--surface-border);
+  color: var(--text-color);
+  border: none;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: background-color 0.2s;
+}
+
+.clear-history:hover {
+  background-color: var(--surface-hover);
+}
+
+.no-history {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-color-secondary);
+  opacity: 0.6;
+}
+
+.no-history i {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Chart panel */
+.chart-panel {
+  height: 350px; /* Fixed height for chart panel */
+  min-height: 350px;
+  max-height: 350px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-card, #ffffff);
+  overflow: hidden;
+  border: 1px solid var(--surface-border, #e0e0e0);
+  border-radius: 6px;
+}
+
+.chart-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.chart-controls select {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--surface-border, #e0e0e0);
+  background-color: var(--surface-card, #ffffff);
+  color: var(--text-color, #374151);
+  font-size: 0.8rem;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Chart container */
+.chart-container {
+  flex: 1;
+  position: relative;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.no-chart-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: var(--text-color-secondary);
+  opacity: 0.6;
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+.no-chart-data i {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.topic-header {
+  padding: 8px;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #ddd;
+  font-weight: bold;
+  height: 50px;
+}
+
+.topic-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.search-container {
+  flex: 1;
+  margin-left: 10px;
+  max-width: calc(100% - 10px); /* Prevent overflow */
+}
+
+.topic-search {
+  width: 100%;
+  max-width: 100%;
+  padding: 4px 8px;
+  border: 1px solid var(--surface-border, #e0e0e0);
+  border-radius: 10px;
+  font-size: 0.9em;
+  height: 35px;
+  box-sizing: border-box; /* Include padding in width calculation */
+  font-family: 'Poppins', sans-serif;
+}
+
+.topic-search:focus {
+  outline: none;
+  border-color: #2196F3;
+}
+
+/* ======================================
+   RESPONSIVE DESIGN
+   ====================================== */
+
+/* Large Desktop (default styles above) */
+
+/* Medium screens (laptops, smaller desktops) */
+@media screen and (max-width: 1200px) {
+  .chart-panel {
+    height: 300px;
+    min-height: 300px;
+    max-height: 300px;
+  }
+  
+  .topic-panel {
+    width: 35%;
+  }
+}
+
+/* Small screens (tablets) */
+@media screen and (max-width: 992px) {
+  .container {
+    flex-direction: column;
+  }
+  
+  .topic-panel {
+    width: 100%;
+    height: 250px;
+    min-height: 250px;
+    max-height: 250px;
+  }
+  
+  .right-panel {
+    margin-left: 0;
+    margin-top: 1px;
+  }
+  
+  .chart-panel {
+    height: 280px;
+    min-height: 280px;
+    max-height: 280px;
+  }
+  
+  .topic-header-content {
+    padding: 0 0.5rem;
+  }
+  
+  .tree-container {
+    padding: 0.25rem;
+  }
+  
+  .header h1 {
+    font-size: 1.25rem;
+  }
+}
+
+/* Extra small screens (mobile phones) */
+@media screen and (max-width: 767px) {
+  .top-section {
+    flex-direction: column;
+  }
+  
+  .payload-panel, .history-panel {
+    margin-right: 0;
+  }
+  
+  .payload-panel {
+    flex: none;
+    height: 200px;
+    min-height: 200px;
+  }
+  
+  .history-panel {
+    flex: none;
+    height: 150px;
+    min-height: 150px;
+    margin-top: 1px;
+  }
+  
+  .chart-panel {
+    height: 250px;
+    min-height: 250px;
+    max-height: 250px;
+  }
+  
+  .payload-header, .history-header, .chart-header {
+    padding: 0.5rem;
+    height: 2.5rem;
+  }
+  
+  .chart-controls {
+    flex-direction: column;
+    position: absolute;
+    right: 0.5rem;
+    top: 2.5rem;
+    background: var(--surface-card);
+    border: 1px solid var(--surface-border);
+    border-radius: 4px;
+    padding: 0.25rem;
+    z-index: 5;
+    opacity: 0.9;
+  }
+  
+  .chart-header {
+    position: relative;
+  }
+  
+  .header {
+    padding: 0.5rem;
+  }
+  
+  .header h1 {
+    font-size: 1.1rem;
+  }
+  
+  .connection-status {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+}
+
+/* Very small screens adjustments */
+@media screen and (max-width: 480px) {
+  .topic-panel {
+    height: 200px;
+    min-height: 200px;
+  }
+  
+  .chart-panel {
+    height: 200px;
+    min-height: 200px;
+    max-height: 200px;
+  }
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.stats-display {
+  display: flex;
+  gap: 0.75rem;
+  margin-right: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.stats-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background-color: var(--surface-section);
+  border-radius: 4px;
+  color: var(--text-color-secondary);
+  cursor: help;
+  position: relative;
+  transition: background-color 0.2s;
+}
+
+.stats-item:hover {
+  background-color: var(--surface-hover);
+}
+
+.stats-item i {
+  margin-right: 0.375rem;
+  font-size: 0.8rem;
+}
+
+.sync-indicator {
+  background-color: #fef3c7 !important;
+  color: #92400e !important;
+  border: 1px solid #fed7aa !important;
+  animation: fadeInOut 3s ease-in-out;
+}
+
+.sync-indicator i {
+  animation: spin 1s ease-in-out;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(-10px); }
+  20% { opacity: 1; transform: translateY(0); }
+  80% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.topic-help-panel {
+  margin-top: auto;
+  padding: 0.75rem;
+  background-color: rgba(59, 130, 246, 0.05);
+  border-top: 1px solid var(--surface-border, #e0e0e0);
+  flex-shrink: 0; /* Prevent it from shrinking */
+  max-height: 150px; /* Limit height to prevent taking too much space */
+  overflow-y: auto; /* Allow scrolling if content is too long */
+}
+
+.topic-help-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--primary-color, #3b82f6);
+  margin-bottom: 0.5rem;
+  font-family: 'Poppins', sans-serif;
+}
+
+.topic-help-content {
+  font-size: 0.85rem;
+  color: var(--text-color-secondary, #6b7280);
+  font-family: 'Poppins', sans-serif;
+}
+
+.topic-help-content p {
+  margin: 0 0 0.5rem 0;
+}
+
+.topic-help-content ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.topic-help-content li {
+  margin-bottom: 0.25rem;
+}
+
+/* MQTT Tree Node Styling */
+.mqtt-tree .has-data {
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.mqtt-tree .intermediate-node {
+  /* Remove grey color and italic styling - keep normal appearance */
+}
+
+.mqtt-tree .intermediate-node:hover {
+  opacity: 1;
+  cursor: pointer;
+}
+
+.mqtt-tree .has-data:hover {
+  color: var(--primary-color-dark);
+}
+
+/* Prevent selection of intermediate nodes */
+.mqtt-tree .intermediate-node .p-treenode-content {
+  user-select: none;
+}
+
+.mqtt-tree .has-data .p-treenode-content {
+  cursor: pointer;
+} 

@@ -1,0 +1,67 @@
+<script type="text/javascript">
+  RED.nodes.registerType('mqtt-observer', {
+    category: 'Bitpool MQTT',
+    color: '#00aeef',
+    defaults: {
+      name: { value: "" },
+      path: { value: "/mqtt-observer" },
+      maxHistory: { value: 20, validate: RED.validators.number() }
+    },
+    inputs: 1,
+    outputs: 0,
+    icon: "feed.png",
+    label: function () {
+      return this.name || "MQTT Observer";
+    },
+    labelStyle: function () {
+      return this.name ? "node_label_italic" : "";
+    },
+    oneditprepare: function () {
+      $(".openInspectorLink").click(function () {
+        const path = $("#node-input-path").val() || "/mqtt-observer";
+        const baseUrl = window.location.origin;
+        window.open(baseUrl + path, "_blank");
+      });
+    }
+  });
+</script>
+
+<script type="text/html" data-template-name="mqtt-observer">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-path"><i class="fa fa-globe"></i> Path</label>
+        <input type="text" id="node-input-path" placeholder="/mqtt-observer">
+    </div>
+    <div class="form-row">
+        <label for="node-input-maxHistory"><i class="fa fa-history"></i> Max History</label>
+        <input type="number" id="node-input-maxHistory" placeholder="20" min="1" max="1000">
+    </div>
+
+    <label class="openInspectorLink" for="open-inspector" style="margin-top: 30px;">
+      <i class="pi pi-external-link" id="open-inspector"></i>
+      <a id="open-inspector-text" style="padding-left: 10px;">Open Webpage</a>
+    </label>
+</script>
+
+<script type="text/html" data-help-name="mqtt-observer">
+    <p>A node that serves a webpage for observing MQTT messages.</p>
+    <h3>Inputs</h3>
+    <dl class="message-properties">
+        <dt>payload <span class="property-type">various</span></dt>
+        <dd>MQTT messages to be displayed on the observer.</dd>
+    </dl>
+    <h3>Settings</h3>
+    <dl class="message-properties">
+        <dt>Path</dt>
+        <dd>The URL path where the MQTT observer page is accessible.</dd>
+        
+        <dt>Max History</dt>
+        <dd>Maximum number of historical messages to store per topic (Default: 20).</dd>
+    </dl>
+    <h3>Details</h3>
+    <p>This node serves a web page that displays MQTT messages.</p>
+    <p>Configure the path where the page will be accessible and adjust the max history to control memory usage.</p>
+</script>

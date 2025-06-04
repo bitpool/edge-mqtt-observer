@@ -1,0 +1,36 @@
+{
+  "name": "@bitpoolos/edge-mqtt-observer",
+  "version": "1.0.0",
+  "description": "A MQTT viewer served from Node-Red",
+  "node-red": {
+    "version": ">=2.2.2",
+    "nodes": {
+      "Mqtt-Observer": "mqtt_observer.js"
+    }
+  },
+  "keywords": [
+    "node-red",
+    "bitpool",
+    "bitpoolos",
+    "edge",
+    "big data",
+    "iot",
+    "mqtt"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": {
+    "name": "bitpool-dev",
+    "email": "dev@bitpool.com"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "socket.io": "^4.7.2"
+  }
+}
