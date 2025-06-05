@@ -1,6 +1,6 @@
 {
   "name": "@bitpoolos/edge-mqtt-observer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A MQTT viewer served from Node-Red",
   "node-red": {
     "version": ">=2.2.2",
