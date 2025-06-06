@@ -4,9 +4,16 @@ module.exports = function (RED) {
   const express = require('express');
   const socketio = require('socket.io');
 
+  // Shared Socket.IO instance - only create once per Node-RED runtime
+  let sharedSocketIO = null;
+  let nodeInstanceCount = 0;
+
   function MqttObserverNode(config) {
     RED.nodes.createNode(this, config);
     const node = this;
+
+    // Increment instance count
+    nodeInstanceCount++;
 
     // Initialize node properties
     node.name = config.name;
@@ -135,11 +142,20 @@ module.exports = function (RED) {
       return;
     }
 
-    // Initialize Socket.IO with the Node-RED HTTP server
-    const io = socketio(RED.server);
+    // Initialize shared Socket.IO instance only once
+    if (!sharedSocketIO) {
+      sharedSocketIO = socketio(RED.server, {
+        // Add configuration to prevent conflicts
+        allowEIO3: true,
+        cors: {
+          origin: "*",
+          methods: ["GET", "POST"]
+        }
+      });
+    }
 
     // Socket.IO namespace for this specific node instance
-    const namespace = io.of(node.path);
+    const namespace = sharedSocketIO.of(node.path);
     node.namespace = namespace;
 
     // Log for debugging
@@ -336,6 +352,9 @@ module.exports = function (RED) {
 
     // Clean up when node is removed or redeployed
     node.on('close', function () {
+      // Decrement instance count
+      nodeInstanceCount--;
+
       // Clear all intervals
       if (statsResetInterval) {
         clearInterval(statsResetInterval);
@@ -373,12 +392,52 @@ module.exports = function (RED) {
           node.namespace.connected[id].disconnect(true);
         });
         node.namespace.removeAllListeners();
+
+        // Remove the namespace from the shared Socket.IO instance
+        if (sharedSocketIO && sharedSocketIO._nsps) {
+          delete sharedSocketIO._nsps[node.path];
+        }
+
         // Clear any remaining references
         node.namespace = null;
+      }
+
+      // If this is the last node instance, clean up the shared Socket.IO instance
+      if (nodeInstanceCount === 0 && sharedSocketIO) {
+        node.log("Cleaning up shared Socket.IO instance (last node instance)");
+        try {
+          // Close all namespaces
+          if (sharedSocketIO._nsps) {
+            Object.keys(sharedSocketIO._nsps).forEach(ns => {
+              if (sharedSocketIO._nsps[ns]) {
+                sharedSocketIO._nsps[ns].removeAllListeners();
+              }
+            });
+          }
+
+          // Close the Socket.IO server
+          sharedSocketIO.close();
+        } catch (error) {
+          node.log(`Error closing shared Socket.IO instance: ${error.message}`);
+        }
+        sharedSocketIO = null;
       }
     });
   }
 
   // Register the node
   RED.nodes.registerType("mqtt-observer", MqttObserverNode);
+
+  // Clean up shared Socket.IO instance when Node-RED shuts down
+  RED.events.on("runtime-event", function (event) {
+    if (event.id === "runtime-stop" && sharedSocketIO) {
+      try {
+        sharedSocketIO.close();
+        sharedSocketIO = null;
+        nodeInstanceCount = 0;
+      } catch (error) {
+        // Ignore cleanup errors during shutdown
+      }
+    }
+  });
 };
