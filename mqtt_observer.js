@@ -19,12 +19,22 @@ module.exports = function (RED) {
     node.name = config.name;
     node.maxHistory = parseInt(config.maxHistory) || 50; // Increased default from 20 to 50
 
+    // Properly parse enableLogs boolean - Node-RED checkboxes can be tricky
+    node.enableLogs = config.enableLogs === true || config.enableLogs === "true";
+
     // Configure batching parameters
     node.batchInterval = parseInt(config.batchInterval) || 100; // Default to 100ms if not specified
     node.maxBatchSize = parseInt(config.maxBatchSize) || 1000; // Default to 1000 messages per batch
 
     // Topic filtering configuration
     node.topicFilters = config.topicFilters || [];
+
+    // Conditional logging function
+    const logIfEnabled = (message) => {
+      if (node.enableLogs === true) {
+        node.log(message);
+      }
+    };
 
     // Stats tracking
     node.stats = {
@@ -57,7 +67,7 @@ module.exports = function (RED) {
     const bufferCleanupInterval = setInterval(() => {
       // Clear buffer if no clients or if buffer is old
       if (node.wsClients.length === 0 && Object.keys(messageBuffer).length > 0) {
-        node.log('Clearing orphaned message buffer');
+        logIfEnabled('Clearing orphaned message buffer');
         messageBuffer = {};
         bufferCount = 0;
         if (bufferTimer) {
@@ -159,7 +169,7 @@ module.exports = function (RED) {
     node.namespace = namespace;
 
     // Log for debugging
-    node.log(`MQTT Observer WebSocket namespace: ${node.path}`);
+    logIfEnabled(`MQTT Observer WebSocket namespace: ${node.path}`);
 
     // Handle WebSocket connections
     namespace.on('connection', function (socket) {
@@ -193,13 +203,13 @@ module.exports = function (RED) {
       // Handle topic filter updates from client
       socket.on('set-topic-filter', function (filters) {
         client.topicFilters = Array.isArray(filters) ? filters : [];
-        node.log(`Client updated filters: ${client.topicFilters.length} filters`);
+        logIfEnabled(`Client updated filters: ${client.topicFilters.length} filters`);
       });
 
       // Handle topic subscription from client
       socket.on('subscribe-topic', function (pattern) {
         client.topicPattern = pattern || null;
-        node.log(`Client subscribed to topic pattern: ${pattern}`);
+        logIfEnabled(`Client subscribed to topic pattern: ${pattern}`);
 
         // Reset subscribed topics when pattern changes
         client.subscribedTopics = new Set();
@@ -212,7 +222,7 @@ module.exports = function (RED) {
           const topicsArray = Array.from(client.subscribedTopics);
           // Keep only the most recent 15000 topics (increased from 5000)
           client.subscribedTopics = new Set(topicsArray.slice(-15000));
-          node.log(`Cleaned up client subscribed topics, reduced from ${topicsArray.length} to ${client.subscribedTopics.size}`);
+          logIfEnabled(`Cleaned up client subscribed topics, reduced from ${topicsArray.length} to ${client.subscribedTopics.size}`);
         }
       }, 300000); // Check every 5 minutes (increased from 1 minute)
 
@@ -223,7 +233,7 @@ module.exports = function (RED) {
 
       // Handle sync requests (for clients returning from background)
       socket.on('request-sync', function (syncInfo) {
-        node.log(`Client requested sync: visible=${syncInfo.clientVisible}`);
+        logIfEnabled(`Client requested sync: visible=${syncInfo.clientVisible}`);
 
         // Mark client as active/visible
         client.isVisible = syncInfo.clientVisible;
@@ -232,7 +242,7 @@ module.exports = function (RED) {
         // Send current buffer immediately if we have data
         if (Object.keys(messageBuffer).length > 0) {
           socket.emit('mqtt-messages-batch', { ...messageBuffer });
-          node.log(`Sent ${Object.keys(messageBuffer).length} buffered messages to syncing client`);
+          logIfEnabled(`Sent ${Object.keys(messageBuffer).length} buffered messages to syncing client`);
         }
 
         // Send current stats
@@ -266,7 +276,7 @@ module.exports = function (RED) {
 
       // Log stats if there's traffic
       if (node.stats.totalMessages > 0) {
-        node.log(`Stats: ${node.stats.totalMessages} msgs (${msgPerSec}/sec), ${node.stats.filteredMessages} filtered, ${node.stats.batchesSent} batches`);
+        logIfEnabled(`Stats: ${node.stats.totalMessages} msgs (${msgPerSec}/sec), ${node.stats.filteredMessages} filtered, ${node.stats.batchesSent} batches`);
       }
 
       // Reset counters
@@ -404,7 +414,7 @@ module.exports = function (RED) {
 
       // If this is the last node instance, clean up the shared Socket.IO instance
       if (nodeInstanceCount === 0 && sharedSocketIO) {
-        node.log("Cleaning up shared Socket.IO instance (last node instance)");
+        logIfEnabled("Cleaning up shared Socket.IO instance (last node instance)");
         try {
           // Close all namespaces
           if (sharedSocketIO._nsps) {
@@ -418,7 +428,7 @@ module.exports = function (RED) {
           // Close the Socket.IO server
           sharedSocketIO.close();
         } catch (error) {
-          node.log(`Error closing shared Socket.IO instance: ${error.message}`);
+          logIfEnabled(`Error closing shared Socket.IO instance: ${error.message}`);
         }
         sharedSocketIO = null;
       }

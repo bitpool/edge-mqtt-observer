@@ -602,6 +602,7 @@
           }
 
           let processedCount = 0;
+          let selectedTopicUpdated = false;
 
           // Process messages in chunks to avoid UI blocking
           const processNextChunk = (startIndex) => {
@@ -612,6 +613,11 @@
             chunk.forEach(topic => {
               const message = messageBatch[topic];
               this.processMessage(message, false); // Don't update UI for each message
+
+              // Check if this message is for the currently selected topic
+              if (this.selectedTopic && this.normalizeTopic(message.topic) === this.selectedTopic) {
+                selectedTopicUpdated = true;
+              }
             });
 
             processedCount += chunk.length;
@@ -624,6 +630,13 @@
             } else {
               // All chunks processed, now update the UI once
               this.throttledUpdateTopicTree();
+
+              // If we got a message for the selected topic, update payload and chart
+              if (selectedTopicUpdated && this.selectedTopic && this.topicData[this.selectedTopic]) {
+                this.displayPayload(this.topicData[this.selectedTopic]);
+                this.updateChart();
+              }
+
               this.processingBatch = false;
             }
           };
@@ -868,7 +881,8 @@
             if (this.topicData[altPath]) {
               this.displayPayload(this.topicData[altPath]);
             } else {
-              this.selectedTopic = topicPath;
+              // Always normalize the selected topic to ensure consistent comparison
+              this.selectedTopic = this.normalizeTopic(topicPath);
               this.selectedPayload = null;
               this.selectedTimestamp = '';
             }
@@ -885,7 +899,8 @@
             return;
           }
 
-          this.selectedTopic = message.topic;
+          // Always normalize the selected topic to ensure consistent comparison
+          this.selectedTopic = this.normalizeTopic(message.topic);
           this.selectedPayload = message.payload;
 
           // Format timestamp
@@ -1003,7 +1018,8 @@
             } else {
               // For leaf nodes without data, show the topic but with null payload
               // This is different from an error - it's a valid topic that just hasn't received data yet
-              this.selectedTopic = topicPath;
+              // Always normalize the selected topic to ensure consistent comparison
+              this.selectedTopic = this.normalizeTopic(topicPath);
               this.selectedPayload = null;
               this.selectedTimestamp = '';
             }

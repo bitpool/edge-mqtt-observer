@@ -42,7 +42,6 @@ The module can be updated via the Node-RED pallette manager, or via the npm cli.
 
 ## Resources
 - [bitpool.com](https://www.bitpool.com/) - who are we.
-- [wiki.bitpool.com](https://wiki.bitpool.com/) - helpful docs.
 - [hub.docker.com](https://hub.docker.com/r/bitpoolos/bitpool-edge) - pre-canned nodes.
 
 
