@@ -25,6 +25,10 @@
     "email": "dev@bitpool.com"
   },
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bitpool/edge-mqtt-observer.git"
+  },
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
